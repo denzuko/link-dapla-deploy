@@ -103,8 +103,7 @@
    CHHOTO_URL_SITE_URL must match the public-facing domain so generated short
    links resolve correctly. CHHOTO_URL_REDIRECT_METHOD is PERMANENT so clients
    cache the redirect."
-  (let ((port (+ (service-account-uid *service-user*) *port-base*)))
-    `(("Unit"      . (("Description" . "Chhoto URL shortener")))
+  `(("Unit"      . (("Description" . "Chhoto URL shortener")))
       ("Container" . (("Image"         . "oci.dapla.net/sintan1729/chhoto-url:latest")
                       ("ContainerName" . "chhoto")
                       ("AutoUpdate"    . "registry")
@@ -124,8 +123,7 @@
   "HAProxy vhost for link.dapla.net. Redirect responses from the backend are
    passed through unmodified so PERMANENT redirects reach the client intact.
    Backend port is the service account UID."
-  (let ((port (+ (service-account-uid *service-user*) *port-base*)))
-    (format nil
+  (format nil
 "frontend link_http
   bind *:80
   acl host_link hdr(host) -i link.dapla.net
@@ -181,12 +179,7 @@ backend link_be
   (:desc (format nil "HAProxy vhost written for ~A" *haproxy-fqdn*))
   (:check nil)
   (:apply
-   (let ((port (+ (service-account-uid *service-user*) *port-base*)))
-     (unless port
-       (consfigurator:inapplicable-property
-        "Service account ~A does not exist; cannot determine port."
-        *service-user*))
-     (let* ((cfg-path (format nil "/etc/haproxy/conf.d/~A.cfg" *haproxy-vhost-name*))
+   (let* ((cfg-path (format nil "/etc/haproxy/conf.d/~A.cfg" *haproxy-vhost-name*))
             (new-content (haproxy-vhost-config))
             (current (when (probe-file cfg-path)
                        (uiop:read-file-string cfg-path))))
