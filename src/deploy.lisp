@@ -42,7 +42,6 @@
 (defparameter *haproxy-fqdn* "link.dapla.net")
 (defparameter *haproxy-vhost-name* "link")
 
-
 (defprop zfs-encryption-key :posix (path)
   "Generate a raw 32-byte ZFS encryption key at PATH, once, left alone on
    redeploy. Written directly by openssl to avoid binary corruption through
@@ -94,31 +93,18 @@
       (dolist (kv (cdr section)) (format s "~A=~A~%" (car kv) (cdr kv)))
       (format s "~%"))))
 
-(defun service-account-uid (username)
-  "Read USERNAME's UID from the local passwd database via getent at
-   property apply time, after ROOTLESS-SERVICE-ACCOUNT has run. Returns
-   NIL if the account does not yet exist, allowing callers to defer
-   operations that depend on the UID. The UID is the loopback PublishPort,
-   per dapla.net convention."
-  (let ((raw (with-output-to-string (s)
-               (uiop:run-program (list "getent" "passwd" username)
-                                 :output s
-                                 :ignore-error-status t))))
-    (when (and raw (plusp (length (string-trim '(#\Newline #\Space) raw))))
-      (parse-integer
-       (third (uiop:split-string
-               (string-trim '(#\Newline #\Space) raw)
-               :separator '(#\:)))))))
-
 (defun link-network-sections ()
-  '(("Network" . (("NetworkName" . "link") ("Internal" . "true")))))
+  '(("Network" . (("NetworkName" . "link") ("Driver"      . "bridge")
+                  ("Subnet"      . "10.89.2.32/30")
+                  ("Gateway"     . "10.89.2.33")))))
 
 (defun link-container-sections (data-mountpoint)
   "Cinix AST for link.container. The loopback port is the service account UID.
    CHHOTO_URL_SITE_URL must match the public-facing domain so generated short
    links resolve correctly. CHHOTO_URL_REDIRECT_METHOD is PERMANENT so clients
    cache the redirect."
-  `(("Unit"      . (("Description" . "Chhoto URL shortener")))
+  (let ((port (+ (service-account-uid *service-user*) *port-base*)))
+    `(("Unit"      . (("Description" . "Chhoto URL shortener")))
       ("Container" . (("Image"         . "oci.dapla.net/sintan1729/chhoto-url:latest")
                       ("ContainerName" . "chhoto")
                       ("AutoUpdate"    . "registry")
