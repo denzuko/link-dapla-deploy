@@ -30,6 +30,8 @@
            :zfs-encryption-key :zfs-dataset-mounted
            :rootless-service-account :images-pulled
            :cinix-write-string
+           :link-network-sections
+           :link-container-sections
            :quadlets-written :quadlets-activated
            :haproxy-vhost-config :haproxy-vhost-written
            :decommissioned))
@@ -117,7 +119,7 @@
                    ("Subnet"      . "10.89.2.32/30")
                    ("Gateway"     . "10.89.2.33")))))
 
-(defun link-container-sections (data-mountpoint)
+(defun link-container-sections ()
   "Cinix AST for link.container. HAProxy backend: 10.89.2.33:4567."
   `(("Unit" . (("Description" . "Chhoto URL shortener")))
     ("Container" . (("Image"         . "oci.dapla.net/sintan1729/chhoto-url:latest")
@@ -125,7 +127,8 @@
                     ("AutoUpdate"    . "registry")
                       ("Environment" . "CHHOTO_URL_SITE_URL=https://link.dapla.net")
                       ("Environment" . "CHHOTO_URL_REDIRECT_METHOD=PERMANENT")
-                    ("Volume" . ,(format nil "~A:/app/urls.sqlite:Z" data-mountpoint))
+                    ("Volume" . "%h:/var/lib/link:ro")
+                    ("Volume" . "/srv/%U/data:/app/urls.sqlite:Z")
                     ("Network"       . "link.network")
                     ("Label"         . "io.containers.autoupdate=registry")
                     ("Label"         . "org.cispec.application=link-dapla-deploy")
@@ -165,7 +168,7 @@ backend link_be
   server chhoto 10.89.2.33:4567 check inter 10s rise 2 fall 3
 "))
 
-(defprop quadlets-written :posix (user home data-mountpoint)
+(defprop quadlets-written :posix (user home)
   "Write all link quadlet unit files into USER's systemd container directory."
   (:desc (format nil "Chhoto URL shortener quadlet units written for ~A" user))
   (:apply
@@ -174,7 +177,7 @@ backend link_be
      (write-remote-file (format nil "~A/link.network" quadlet-dir)
                         (cinix-write-string (link-network-sections)))
      (write-remote-file (format nil "~A/link.container" quadlet-dir)
-                        (cinix-write-string (link-container-sections data-mountpoint))))))
+                        (cinix-write-string (link-container-sections))))))
 
 (defprop quadlets-activated :posix (user)
   "Reload USER's user-scope systemd daemon and restart link services."
