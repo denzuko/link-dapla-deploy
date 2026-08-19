@@ -223,10 +223,10 @@ backend link_be
    (mrun "loginctl" "terminate-user" user)
    (mrun "loginctl" "disable-linger" user)
    (mrun "userdel" user)
-   (mrun "zfs" "destroy" "-r" 'storage/users/chhoto')
-   (mrun "zfs" "destroy" "-r" 'storage/containers/chhoto')
-   (mrun "rm" "-f" '/etc/zfs-keys/chhoto-users.key')
-   (mrun "rm" "-f" '/etc/zfs-keys/chhoto-data.key')))
+   (mrun "zfs" "destroy" "-r" "storage/users/chhoto")
+   (mrun "zfs" "destroy" "-r" "storage/containers/chhoto")
+   (mrun "rm" "-f" "/etc/zfs-keys/chhoto-users.key")
+   (mrun "rm" "-f" "/etc/zfs-keys/chhoto-data.key")))
 
 (defun deploy-app ()
   "Provision Chhoto via LINK-HOST. Aborts loudly if any property is skipped."
